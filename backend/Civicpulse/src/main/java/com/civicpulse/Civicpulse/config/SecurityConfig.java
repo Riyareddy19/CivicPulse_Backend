@@ -34,11 +34,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private CsrfTokenRequestHandler spaCsrfTokenRequestHandler() {
-        CsrfTokenRequestAttributeHandler plainHandler =
-                new CsrfTokenRequestAttributeHandler();
+        CsrfTokenRequestAttributeHandler plainHandler = new CsrfTokenRequestAttributeHandler();
 
-        XorCsrfTokenRequestAttributeHandler xorHandler =
-                new XorCsrfTokenRequestAttributeHandler();
+        XorCsrfTokenRequestAttributeHandler xorHandler = new XorCsrfTokenRequestAttributeHandler();
 
         return new CsrfTokenRequestHandler() {
 
@@ -56,11 +54,10 @@ public class SecurityConfig {
                     HttpServletRequest request,
                     CsrfToken csrfToken) {
 
-                String headerValue =
-                        request.getHeader(csrfToken.getHeaderName());
+                String headerValue = request.getHeader(csrfToken.getHeaderName());
 
                 if (headerValue != null && !headerValue.isBlank()) {
-                    return plainHandler.resolveCsrfTokenValue(
+                    return xorHandler.resolveCsrfTokenValue(
                             request, csrfToken);
                 }
 
@@ -95,8 +92,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                "https://civic-pulse-frontend-eight.vercel.app"
-        ));
+                "https://civic-pulse-frontend-eight.vercel.app"));
 
         configuration.setAllowedMethods(List.of(
                 "GET",
@@ -104,19 +100,16 @@ public class SecurityConfig {
                 "PATCH",
                 "PUT",
                 "DELETE",
-                "OPTIONS"
-        ));
+                "OPTIONS"));
 
         configuration.setAllowedHeaders(List.of(
                 "Content-Type",
                 "X-XSRF-TOKEN",
-                "X-Requested-With"
-        ));
+                "X-Requested-With"));
 
         configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
         source.registerCorsConfiguration("/**", configuration);
 
@@ -130,101 +123,90 @@ public class SecurityConfig {
             SecurityContextRepository securityContextRepository)
             throws Exception {
 
-        CookieCsrfTokenRepository csrfTokenRepository =
-                CookieCsrfTokenRepository.withHttpOnlyFalse();
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 
         // Allow the browser to send the CSRF cookie over cross-site HTTPS.
-        csrfTokenRepository.setCookieCustomizer(cookie ->
-                cookie.sameSite("None").secure(true)
-        );
+        csrfTokenRepository.setCookieCustomizer(cookie -> cookie.sameSite("None").secure(true));
 
         http
-            .userDetailsService(userDetailsService)
+                .userDetailsService(userDetailsService)
 
-            .cors(cors -> cors.configurationSource(
-                    corsConfigurationSource()
-            ))
+                .cors(cors -> cors.configurationSource(
+                        corsConfigurationSource()))
 
-            .csrf(csrf -> csrf
-                .csrfTokenRepository(csrfTokenRepository)
-                .csrfTokenRequestHandler(
-                        spaCsrfTokenRequestHandler()
-                )
-            )
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(
+                                spaCsrfTokenRequestHandler()))
 
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(
-                        SessionCreationPolicy.IF_REQUIRED
-                )
-            )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(
+                                SessionCreationPolicy.IF_REQUIRED))
 
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
 
-            .securityContext(context -> context
-                .securityContextRepository(
-                        securityContextRepository
-                )
-            )
+                .securityContext(context -> context
+                        .securityContextRepository(
+                                securityContextRepository))
 
-            .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> auth
 
-                // Public authentication endpoints
-                .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/auth/csrf"
-                ).permitAll()
+                        // Public authentication endpoints
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/auth/csrf")
+                        .permitAll()
 
-                .requestMatchers(
-                        HttpMethod.POST,
-                        "/api/auth/register",
-                        "/api/auth/login"
-                ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/register",
+                                "/api/auth/login")
+                        .permitAll()
 
-                // Require a logged-in user
-                .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/auth/me"
-                ).authenticated()
+                        // Require a logged-in user
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/auth/me")
+                        .authenticated()
 
-                .requestMatchers(
-                        HttpMethod.POST,
-                        "/api/auth/logout"
-                ).authenticated()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/logout")
+                        .authenticated()
 
-                // Deny other authentication endpoints
-                .requestMatchers("/api/auth/**").denyAll()
+                        // Deny other authentication endpoints
+                        .requestMatchers("/api/auth/**").denyAll()
 
-                // Admin-only dashboard statistics
-                .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/issues/stats"
-                ).hasRole("ADMIN")
+                        // Admin-only dashboard statistics
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/issues/stats")
+                        .hasRole("ADMIN")
 
-                // Admin-only issue status updates
-                .requestMatchers(
-                        HttpMethod.PATCH,
-                        "/api/issues/*/status"
-                ).hasRole("ADMIN")
+                        // Admin-only issue status updates
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/issues/*/status")
+                        .hasRole("ADMIN")
 
-                // Public issue viewing
-                .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/issues",
-                        "/api/issues/**"
-                ).permitAll()
+                        // Public issue viewing
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/issues",
+                                "/api/issues/**")
+                        .permitAll()
 
-                // Creating issues requires authentication
-                .requestMatchers(
-                        HttpMethod.POST,
-                        "/api/issues"
-                ).authenticated()
+                        // Creating issues requires authentication
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/issues")
+                        .authenticated()
 
-                // Deny other unlisted API requests
-                .requestMatchers("/api/**").denyAll()
+                        // Deny other unlisted API requests
+                        .requestMatchers("/api/**").denyAll()
 
-                .anyRequest().permitAll()
-            );
+                        .anyRequest().permitAll());
 
         return http.build();
     }
