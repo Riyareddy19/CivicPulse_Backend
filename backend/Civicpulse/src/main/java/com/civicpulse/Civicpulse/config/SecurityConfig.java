@@ -1,3 +1,4 @@
+
 package com.civicpulse.Civicpulse.config;
 
 import com.civicpulse.Civicpulse.service.CustomUserDetailsService;
@@ -40,6 +41,7 @@ public class SecurityConfig {
                 new XorCsrfTokenRequestAttributeHandler();
 
         return new CsrfTokenRequestHandler() {
+
             @Override
             public void handle(
                     HttpServletRequest request,
@@ -97,8 +99,12 @@ public class SecurityConfig {
         ));
 
         configuration.setAllowedMethods(List.of(
-                "GET", "POST", "PATCH", "PUT",
-                "DELETE", "OPTIONS"
+                "GET",
+                "POST",
+                "PATCH",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
         ));
 
         configuration.setAllowedHeaders(List.of(
@@ -124,6 +130,14 @@ public class SecurityConfig {
             SecurityContextRepository securityContextRepository)
             throws Exception {
 
+        CookieCsrfTokenRepository csrfTokenRepository =
+                CookieCsrfTokenRepository.withHttpOnlyFalse();
+
+        // Allow the browser to send the CSRF cookie over cross-site HTTPS.
+        csrfTokenRepository.setCookieCustomizer(cookie ->
+                cookie.sameSite("None").secure(true)
+        );
+
         http
             .userDetailsService(userDetailsService)
 
@@ -132,17 +146,15 @@ public class SecurityConfig {
             ))
 
             .csrf(csrf -> csrf
-                .csrfTokenRepository(
-                    CookieCsrfTokenRepository.withHttpOnlyFalse()
-                )
+                .csrfTokenRepository(csrfTokenRepository)
                 .csrfTokenRequestHandler(
-                    spaCsrfTokenRequestHandler()
+                        spaCsrfTokenRequestHandler()
                 )
             )
 
             .sessionManagement(session -> session
                 .sessionCreationPolicy(
-                    SessionCreationPolicy.IF_REQUIRED
+                        SessionCreationPolicy.IF_REQUIRED
                 )
             )
 
@@ -151,7 +163,7 @@ public class SecurityConfig {
 
             .securityContext(context -> context
                 .securityContextRepository(
-                    securityContextRepository
+                        securityContextRepository
                 )
             )
 
@@ -159,25 +171,25 @@ public class SecurityConfig {
 
                 // Public authentication endpoints
                 .requestMatchers(
-                    HttpMethod.GET,
-                    "/api/auth/csrf"
+                        HttpMethod.GET,
+                        "/api/auth/csrf"
                 ).permitAll()
 
                 .requestMatchers(
-                    HttpMethod.POST,
-                    "/api/auth/register",
-                    "/api/auth/login"
+                        HttpMethod.POST,
+                        "/api/auth/register",
+                        "/api/auth/login"
                 ).permitAll()
 
                 // Require a logged-in user
                 .requestMatchers(
-                    HttpMethod.GET,
-                    "/api/auth/me"
+                        HttpMethod.GET,
+                        "/api/auth/me"
                 ).authenticated()
 
                 .requestMatchers(
-                    HttpMethod.POST,
-                    "/api/auth/logout"
+                        HttpMethod.POST,
+                        "/api/auth/logout"
                 ).authenticated()
 
                 // Deny other authentication endpoints
@@ -185,27 +197,27 @@ public class SecurityConfig {
 
                 // Admin-only dashboard statistics
                 .requestMatchers(
-                    HttpMethod.GET,
-                    "/api/issues/stats"
+                        HttpMethod.GET,
+                        "/api/issues/stats"
                 ).hasRole("ADMIN")
 
                 // Admin-only issue status updates
                 .requestMatchers(
-                    HttpMethod.PATCH,
-                    "/api/issues/*/status"
+                        HttpMethod.PATCH,
+                        "/api/issues/*/status"
                 ).hasRole("ADMIN")
 
                 // Public issue viewing
                 .requestMatchers(
-                    HttpMethod.GET,
-                    "/api/issues",
-                    "/api/issues/**"
+                        HttpMethod.GET,
+                        "/api/issues",
+                        "/api/issues/**"
                 ).permitAll()
 
                 // Creating issues requires authentication
                 .requestMatchers(
-                    HttpMethod.POST,
-                    "/api/issues"
+                        HttpMethod.POST,
+                        "/api/issues"
                 ).authenticated()
 
                 // Deny other unlisted API requests
